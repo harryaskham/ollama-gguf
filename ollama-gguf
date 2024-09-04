@@ -5,9 +5,10 @@ usage() {
  echo "Options:"
  echo " -m,     Path to the GGUF to import"
  echo " -b,     The ollama model to base it on"
+ echo " -a,     An alias for the model"
 }
 
-while getopts ":h:m:b:" flag; do
+while getopts ":h:m:b:a:" flag; do
  case ${flag} in
    h)
    usage
@@ -19,6 +20,9 @@ while getopts ":h:m:b:" flag; do
    b)
    FROM_MODEL=${OPTARG}
    ;;
+   a)
+   ALIAS=${OPTARG}
+   ;;
    \?)
    usage
    exit 1
@@ -27,8 +31,12 @@ while getopts ":h:m:b:" flag; do
 done
 
 GGUF_FILE="${GGUF_PATH##*/}"
-MODEL_NAME="$(echo ${GGUF_FILE%.*} | sed 's/\s/_/g')"
-echo "Importing $MODEL_NAME from $GGUF_PATH"
+if [ -n "$ALIAS" ]; then
+  MODEL_NAME="$ALIAS"
+else
+  MODEL_NAME="$(echo ${GGUF_FILE%.*} | sed 's/\s/_/g')"
+fi
+echo "Importing $GGUF_PATH as $MODEL_NAME"
 MODEL_FILE=$(mktemp)
 
 if [ -n "$FROM_MODEL" ]; then
