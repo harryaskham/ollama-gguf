@@ -1,34 +1,44 @@
-# Usage: ollama-gguf <path to gguf file>
-
 set -e
 
-GGUF_PATH="$(realpath $1)"
+usage() {
+ echo "Usage: $0 [OPTIONS]"
+ echo "Options:"
+ echo " -m,     Path to the GGUF to import"
+ echo " -b,     The ollama model to base it on"
+}
+
+while getopts ":h:m:b:" flag; do
+ case ${flag} in
+   h)
+   usage
+   exit 0
+   ;;
+   m)
+   GGUF_PATH=$(realpath ${OPTARG})
+   ;;
+   b)
+   FROM_MODEL=${OPTARG}
+   ;;
+   \?)
+   usage
+   exit 1
+   ;;
+ esac
+done
+
 GGUF_FILE="${GGUF_PATH##*/}"
 MODEL_NAME="$(echo ${GGUF_FILE%.*} | sed 's/\s/_/g')"
 echo "Importing $MODEL_NAME from $GGUF_PATH"
 MODEL_FILE=$(mktemp)
 
-MODEL_SPEC=$(cat <<EOF
+if [ -n "$FROM_MODEL" ]; then
+  MODEL_SPEC=$(ollama show $FROM_MODEL --modelfile | sed "s%FROM .\+%FROM $GGUF_PATH%")
+else
+  MODEL_SPEC=$(cat <<EOF
 FROM $GGUF_PATH
-TEMPLATE """{{- range \$i, \$_ := .Messages }}
-{{- if eq .Role "user" }}
-{{- if and \$.Tools (le (len (slice \$.Messages \$i)) 2) }}[AVAILABLE_TOOLS] {{ \$.Tools }}[/AVAILABLE_TOOLS]
-{{- end }}[INST] {{ if and \$.System (eq (len (slice \$.Messages \$i)) 1) }}{{ \$.System }}
-
-{{ end }}{{ .Content }}[/INST]
-{{- else if eq .Role "assistant" }}
-{{- if .Content }} {{ .Content }}{{ if not (eq (len (slice \$.Messages \$i)) 1) }}</s>{{ end }}
-{{- else if .ToolCalls }}[TOOL_CALLS] [
-{{- range .ToolCalls }}{"name": "{{ .Function.Name }}", "arguments": {{ .Function.Arguments }}}
-{{- end }}]</s>
-{{- end }}
-{{- else if eq .Role "tool" }}[TOOL_RESULTS] {"content": {{ .Content }}} [/TOOL_RESULTS]
-{{- end }}
-{{- end }}"""
-PARAMETER stop [INST]
-PARAMETER stop [/INST]
 EOF
-)
+  )
+fi
 
 echo "Model spec:\n$MODEL_SPEC"
 echo "$MODEL_SPEC" > $MODEL_FILE

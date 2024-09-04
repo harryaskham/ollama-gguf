@@ -5,7 +5,7 @@ Utility to import GGUF models into ollama easily.
 To import a GGUF model:
 
 #+BEGIN_SRC shell
-$ ollama-gguf /path/to/model_name.gguf
+$ ollama-gguf -m /path/to/model_name.gguf
 #+END_SRC shell
 
 The filename becomes the model name, so one can now run the model with:
@@ -13,3 +13,12 @@ The filename becomes the model name, so one can now run the model with:
 #+BEGIN_SRC shell
 $ ollama run model_name
 #+END_SRC shell
+
+** Inheriting from a base model
+If you want to inherit from a base model, you can use the -b option:
+
+#+BEGIN_SRC shell
+$ ollama-gguf -m /path/to/llama_based.gguf -b llama3.1:8b
+#+END_SRC
+
+This copies the template and parameters from the base model and only replaces the "FROM" line to point to the GGUF.
