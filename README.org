@@ -1,0 +1,15 @@
+* ollama-gguf
+Utility to import GGUF models into ollama easily.
+
+** Usage
+To import a GGUF model:
+
+#+BEGIN_SRC shell
+$ ollama-gguf /path/to/model_name.gguf
+#+END_SRC shell
+
+The filename becomes the model name, so one can now run the model with:
+
+#+BEGIN_SRC shell
+$ ollama run model_name
+#+END_SRC shell
